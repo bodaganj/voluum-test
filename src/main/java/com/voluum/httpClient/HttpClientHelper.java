@@ -5,8 +5,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.ProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
@@ -15,6 +17,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
@@ -46,18 +49,24 @@ public class HttpClientHelper {
 	public HttpClientHelper(final String url, final HttpMethod method) {
 		this.httpClient = HttpClientBuilder.create().build();
 		if (method.equals(HttpMethod.GET)) {
-			rawRequest = new HttpGet(url);
+			this.rawRequest = new HttpGet(url);
 		} else if (method.equals(HttpMethod.PUT)) {
-			rawRequest = new HttpPut(url);
+			this.rawRequest = new HttpPut(url);
 		} else if (method.equals(HttpMethod.POST)) {
-			rawRequest = new HttpPost(url);
+			this.rawRequest = new HttpPost(url);
 		} else {
 			fail(format("%s is unsupported for now!", method.toString()));
 		}
 	}
 
-	public static HttpClientHelper get(final String url) {
-		return new HttpClientHelper(url, HttpMethod.GET);
+	public HttpClientHelper(final String url, final DefaultRedirectStrategy redirectStrategy) {
+		this.httpClient = HttpClientBuilder.create().setRedirectStrategy(redirectStrategy).build();
+		this.rawRequest = new HttpGet(url);
+	}
+
+	public static HttpClientHelper get(final String url, final boolean withRedirectStrategy) {
+		return withRedirectStrategy ? new HttpClientHelper(url, new RedirectStrategy()) : new HttpClientHelper(url,
+				HttpMethod.GET);
 	}
 
 	public static HttpClientHelper put(final String url) {
@@ -204,6 +213,26 @@ public class HttpClientHelper {
 		HEAD,
 		CONNECT,
 		TRACE;
+	}
+
+	private static class RedirectStrategy extends DefaultRedirectStrategy {
+
+		@Override
+		public boolean isRedirected(HttpRequest request, HttpResponse response, HttpContext context) {
+			boolean isRedirect = false;
+			try {
+				isRedirect = super.isRedirected(request, response, context);
+			} catch (ProtocolException e) {
+				e.printStackTrace();
+			}
+			if (!isRedirect) {
+				int responseCode = response.getStatusLine().getStatusCode();
+				if (responseCode == 301 || responseCode == 302) {
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 }
 

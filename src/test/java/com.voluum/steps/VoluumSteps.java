@@ -26,7 +26,7 @@ public class VoluumSteps {
 		String login = System.getProperty("voluum.login");
 		String password = System.getProperty("voluum.password");
 		String url = System.getProperty("voluum.login.url");
-		HttpClientHelper httpClient = HttpClientHelper.get(url);
+		HttpClientHelper httpClient = HttpClientHelper.get(url, false);
 		HttpResponseWrapper response = httpClient.addBasicAuth(login, password).sendAndGetResponse(200);
 		return response.extractRequestTokenFromBody();
 	}
@@ -74,15 +74,16 @@ public class VoluumSteps {
 		return response.extractUrlFromBody();
 	}
 
-	public void performCampaignVisit(final String directUrl) {
+	public String performCampaignVisit(final String directUrl) {
 		LOG.info("Performing Campaign visit");
-		HttpClientHelper httpClientVisit = HttpClientHelper.get(directUrl);
-		httpClientVisit.sendAndGetResponse(200);
+		HttpClientHelper httpClientVisit = HttpClientHelper.get(directUrl, true);
+		HttpResponseWrapper response = httpClientVisit.sendAndGetResponse(302);
+		return response.getHeader("Location");
 	}
 
 	public String getRedirectionLink(final String directUrl) {
 		LOG.info("Getting redirection link");
-		HttpClientHelper httpClientVisit = HttpClientHelper.get(directUrl);
+		HttpClientHelper httpClientVisit = HttpClientHelper.get(directUrl, false);
 		return httpClientVisit.getRedirectedLink();
 	}
 
@@ -93,7 +94,7 @@ public class VoluumSteps {
 	public void performPostbackRequest(final String redirectUrl) {
 		LOG.info("Performing postback request");
 		String url = String.format(System.getProperty("voluum.postback.url"), getSubIdValue(redirectUrl));
-		HttpClientHelper httpClientPostback = HttpClientHelper.get(url);
+		HttpClientHelper httpClientPostback = HttpClientHelper.get(url, false);
 		httpClientPostback.sendAndGetResponse(200);
 	}
 
@@ -112,7 +113,7 @@ public class VoluumSteps {
 		String parameters = System.getProperty("report.get.body").replace("DATE_1", localDate.toString()).replace
 				("DATE_2", localDate.plusDays(1).toString());
 		String url = mainUrl + parameters;
-		HttpClientHelper httpClient = HttpClientHelper.get(url);
+		HttpClientHelper httpClient = HttpClientHelper.get(url, false);
 		return httpClient.addAccept("application/json").addContentType("application/json").addCwauthToken(token)
 				.doNotLogResponseBody().sendAndGetResponse(200);
 	}

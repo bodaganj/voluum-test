@@ -42,6 +42,10 @@ public class HttpResponseWrapper {
 		return rawResponse;
 	}
 
+	public String getHeader(final String header) {
+		return rawResponse.getFirstHeader(header).getValue();
+	}
+
 	public String extractRequestTokenFromBody() {
 		String regexp = "\"token\"\\s:\\s\"([a-zA-Z0-9_-]+)+\"";
 		return extractPatternFromBody(regexp);

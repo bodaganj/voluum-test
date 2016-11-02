@@ -7,6 +7,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +40,9 @@ public class VoluumTests {
 		String token = voluumSteps.getTokenFromLogInResponse();
 		voluumSteps.performAuthToCoreAndReportingServices(token);
 		String directUrl = voluumSteps.createNewDirectLinkingCampaign(token);
-		voluumSteps.performCampaignVisit(directUrl);
+		String headerLocation = voluumSteps.performCampaignVisit(directUrl);
+		assertThat(headerLocation).as("Header Location should contain redirect url").matches(Pattern.compile
+				("http\\:\\/\\/example\\.com\\?subid=[a-zA-Z0-9]+"));
 		String redirectUrl = voluumSteps.getRedirectionLink(directUrl);
 		String subIdValue = voluumSteps.getSubIdValue(redirectUrl);
 		assertThat(subIdValue.length()).as("subid parameter’s value should be resolved to 24 Characters random ID")
@@ -56,8 +59,8 @@ public class VoluumTests {
 		String directUrl = voluumSteps.createNewDirectLinkingCampaign(token);
 		Integer visitsCount = voluumSteps.getVisitsCount(token);
 		voluumSteps.performCampaignVisit(directUrl);
-		await().atMost(10, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(() -> voluumSteps.getVisitsCount
-				(token), is(visitsCount + 1));
+		await().atMost(10, TimeUnit.SECONDS).pollInterval(500, TimeUnit.MILLISECONDS).until(() -> voluumSteps
+				.getVisitsCount(token), is(visitsCount + 1));
 	}
 
 	/**
