@@ -4,15 +4,20 @@ import com.voluum.logger.ProjectLogger;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 
@@ -130,6 +135,25 @@ public class HttpClientHelper {
 			fail(e.getMessage());
 		}
 		return response;
+	}
+
+	public String getRedirectedLink() {
+		HttpContext context = new BasicHttpContext();
+		HttpResponse resp = null;
+		try {
+			resp = httpClient.execute(rawRequest, context);
+		} catch (IOException e) {
+			LOG.error("Response status is not correct (expecting for status code 200)" + e);
+			fail("Response status is not correct (expecting for status code 200)" + e);
+		}
+		if (resp.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+			LOG.error("Response status is not correct (expecting for status code 200)");
+			fail("Response status is not correct (expecting for status code 200)");
+		}
+		HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute("http.request");
+		HttpHost currentHost = (HttpHost) context.getAttribute("http.target_host");
+		return (currentReq.getURI().isAbsolute()) ? currentReq.getURI().toString() : (currentHost.toURI()
+				+ currentReq.getURI());
 	}
 
 	private void logRequest(final HttpRequestBase rawRequest) throws IOException {

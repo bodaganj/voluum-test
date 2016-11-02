@@ -53,6 +53,16 @@ public class HttpResponseWrapper {
 		return extractPatternFromBody(regexp);
 	}
 
+	public String extractVisitsFromBody() {
+		String regexp = "\"visits\"\\s:\\s([0-9]+)";
+		return extractPatternFromBody(regexp);
+	}
+
+	public String extractConversionsFromBody() {
+		String regexp = "\"conversions\"\\s:\\s([0-9]+)";
+		return extractPatternFromBody(regexp);
+	}
+
 	private String extractPatternFromBody(final String regexp) {
 		Pattern pattern = Pattern.compile(regexp);
 		Matcher matcher = pattern.matcher(this.body);
